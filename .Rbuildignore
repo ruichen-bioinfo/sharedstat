@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^CITATION\.cff$
+^LICENSE\.md$
+^NEWS\.md$
+^\.Rbuildignore$
+^\.Rproj\.user$
+^\.github$
+^\.gitignore$
+^\.zenodo\.json$
+^codemeta\.json$
