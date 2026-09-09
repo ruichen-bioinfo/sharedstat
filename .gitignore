@@ -1,0 +1,13 @@
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+.Rcheck/
+*.Rcheck/
+*.tar.gz
+*.tgz
+
+# OS
+.DS_Store
+Thumbs.db

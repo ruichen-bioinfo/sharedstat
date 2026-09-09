@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the accompanying paper."
+title: "sharedstat: Diagnose and Correct Statistics Built from a Shared Component"
+version: 0.1.0
+type: software
+license: MIT
+repository-code: "https://github.com/ruichen-bioinfo/sharedstat"
+# doi: 10.5281/zenodo.XXXXXXX      # uncomment and fill in after the first Zenodo release
+# date-released: 2026-XX-XX        # fill in on the day of the release
+abstract: >-
+  Implements the two estimators, the attenuation result and the five admission checks described in the
+  accompanying paper, together with a known-truth simulator in which compositionality emerges from
+  closed-sum sampling rather than being imposed. Covers four constructions: a statistic formed against a
+  shared reference arm, a residual correlated with its own component, a count of significant features read
+  as an ordering of effect sizes, and an interaction contrast on compositional counts. Ranks no method as
+  more accurate than another and describes no standard method as biased.
+authors:
+  - family-names: Chen
+    given-names: Rui
+    affiliation: Ludwig-Maximilians-Universität München
+keywords:
+  - spurious correlation
+  - shared component
+  - measurement error
+  - regression dilution
+  - mathematical coupling
+  - instrumental variable
+  - compositional data
+  - regulatory divergence
+  - RNA-seq
+  - reproducibility
