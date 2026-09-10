@@ -8,12 +8,12 @@ repository-code: "https://github.com/ruichen-bioinfo/sharedstat"
 # doi: 10.5281/zenodo.XXXXXXX      # uncomment and fill in after the first Zenodo release
 # date-released: 2026-XX-XX        # fill in on the day of the release
 abstract: >-
-  Implements the two estimators, the attenuation result and the five admission checks described in the
-  accompanying paper, together with a known-truth simulator in which compositionality emerges from
-  closed-sum sampling rather than being imposed. Covers four constructions: a statistic formed against a
-  shared reference arm, a residual correlated with its own component, a count of significant features read
-  as an ordering of effect sizes, and an interaction contrast on compositional counts. Ranks no method as
-  more accurate than another and describes no standard method as biased.
+  Quantifies and corrects bias in statistics built from a shared measured component. Covers four
+  constructions: a statistic formed against a shared reference arm, a residual correlated with the
+  component subtracted from it, a count of significant features read as an ordering of effect sizes,
+  and an interaction contrast on compositional counts. Provides two estimators, the attenuation
+  result, the five admission checks and a known-truth simulator in which compositionality emerges
+  from closed-sum sampling rather than being imposed.
 authors:
   - family-names: Chen
     given-names: Rui
