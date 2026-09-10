@@ -5,8 +5,8 @@ version: 0.1.0
 type: software
 license: MIT
 repository-code: "https://github.com/ruichen-bioinfo/sharedstat"
-# doi: 10.5281/zenodo.XXXXXXX      # uncomment and fill in after the first Zenodo release
-# date-released: 2026-XX-XX        # fill in on the day of the release
+doi: "10.5281/zenodo.22693748"
+date-released: "2026-09-10"
 abstract: >-
   Quantifies and corrects bias in statistics built from a shared measured component. Covers four
   constructions: a statistic formed against a shared reference arm, a residual correlated with the
