@@ -203,7 +203,7 @@ compensation_lower_bound <- function(r_observed, ...) {
     ## Dividing by an attenuation factor can carry the implied correlation past 1, which no correlation
     ## can be. That is not a rounding artefact: it says the supplied variance components are inconsistent
     ## with the observed correlation, so one of the inputs is wrong. Returning the impossible number
-    ## silently would let it propagate into a manuscript.
+    ## silently would let a spurious value propagate downstream.
     if (is.finite(ri) && abs(ri) > 1) {
       warning(sprintf(paste("implied rho = %.4f lies outside [-1, 1], so the supplied variance components",
                             "are inconsistent with r_observed = %.4f (attenuation %.4f). Reporting it as",

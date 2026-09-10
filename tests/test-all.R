@@ -125,8 +125,8 @@ cat("\n=== ", if (FAILED) "SOME TESTS FAILED" else "ALL TESTS PASSED", " ===\n",
 if (FAILED) quit(status = 1)
 
 ## ---------------------------------------------------------------------------------------------------
-## Regression tests added 2026-09-09, each pinning a defect that was present and is now fixed. A test
-## that only asserts current behaviour is worth little; these assert the behaviour that was WRONG.
+## Regression tests. Each pins a boundary condition of one estimator by asserting the behaviour that
+## must NOT occur, so that a regression is caught rather than silently re-accepted.
 ## ---------------------------------------------------------------------------------------------------
 
 ## rms_true: independent missingness in s and n used to compare a signal on one feature set against a

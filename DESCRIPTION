@@ -4,16 +4,16 @@ Version: 0.1.0
 Authors@R: person("Rui", "Chen", role = c("aut", "cre"), email = "Rui.Chen@campus.lmu.de")
 Author: Rui Chen [aut, cre]
 Maintainer: Rui Chen <Rui.Chen@campus.lmu.de>
-Description: Comparative designs routinely form a statistic from a difference, a ratio or a
-    residual of two quantities that share a component: a divergence measured against a shared
+Description: Comparative designs often form a statistic from a difference, a ratio or a residual
+    of two quantities that share a measured component: a divergence measured against a shared
     reference arm, a 'trans' term obtained by subtracting a 'cis' term, a count of significant
     genes read as an ordering of effect sizes, or an interaction contrast on compositional counts.
-    Each construction has an algebraic failure mode that is older than genomics. This package
-    implements the five admission checks, the two estimators and the attenuation result described
-    in the accompanying paper, together with a known-truth simulator in which compositionality
-    emerges from closed-sum sampling rather than being imposed. It ranks no method as more accurate
-    than another and describes no standard method as biased; what it provides is the size of each
-    artefact relative to the effect being estimated, and the procedure that follows.
+    In each case the shared measurement error enters the statistic twice with opposite signs, so
+    the estimate is biased by a factor depending on the reliability of the shared component, and
+    the bias does not shrink as features are added. This package quantifies that bias for a given
+    design, applies an instrumental-variable correction where an instrument is available, and
+    provides a known-truth simulator in which compositionality emerges from closed-sum sampling
+    rather than being imposed.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.0)
