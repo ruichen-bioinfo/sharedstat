@@ -2,6 +2,7 @@
 
 Diagnose and correct statistics built from a shared component.
 
+[![DOI](https://zenodo.org/badge/1363200240.svg)](https://doi.org/10.5281/zenodo.22693748)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![R >= 4.0](https://img.shields.io/badge/R-%3E%3D%204.0-blue.svg)](https://www.r-project.org/)
 
