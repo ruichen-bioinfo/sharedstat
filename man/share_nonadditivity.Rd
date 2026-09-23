@@ -15,6 +15,6 @@ The contrast `double - single1 - single2 + wt`. Zero means an additive share dif
 }
 \description{
 For a zero-sum interaction contrast `(+1, -1, -1, +1)` over wild type, two single perturbations and
-the double, any share difference that is **additive** across the perturbations cancels exactly. What
-survives is the non-additive part. This computes it, which is the quantity that predicts an offset.
+the double, any share difference that is additive across the perturbations cancels exactly. What
+survives is the non-additive part, which is the quantity that predicts an offset.
 }

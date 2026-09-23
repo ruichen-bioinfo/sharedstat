@@ -1,9 +1,7 @@
 Package: sharedstat
 Title: Diagnose and Correct Statistics Built from a Shared Component
-Version: 0.1.0
+Version: 0.1.2
 Authors@R: person("Rui", "Chen", role = c("aut", "cre"), email = "Rui.Chen@campus.lmu.de")
-Author: Rui Chen [aut, cre]
-Maintainer: Rui Chen <Rui.Chen@campus.lmu.de>
 Description: Comparative designs often form a statistic from a difference, a ratio or a residual
     of two quantities that share a measured component: a divergence measured against a shared
     reference arm, a 'trans' term obtained by subtracting a 'cis' term, a count of significant
@@ -14,11 +12,12 @@ Description: Comparative designs often form a statistic from a difference, a rat
     design, applies an instrumental-variable correction where an instrument is available, and
     provides a known-truth simulator in which compositionality emerges from closed-sum sampling
     rather than being imposed.
+URL: https://github.com/ruichen-bioinfo/sharedstat
+BugReports: https://github.com/ruichen-bioinfo/sharedstat/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.0)
 Imports: stats
 Suggests: data.table
+Language: en-GB
 Config/roxygen2/version: 8.1.0
-URL: https://github.com/ruichen-bioinfo/sharedstat
-BugReports: https://github.com/ruichen-bioinfo/sharedstat/issues

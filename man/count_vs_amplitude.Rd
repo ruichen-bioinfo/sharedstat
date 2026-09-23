@@ -16,28 +16,32 @@ count_vs_amplitude(
 \arguments{
 \item{condition}{character, condition labels.}
 
-\item{n_sig}{integer, significant-feature counts.}
+\item{n_sig}{significant-feature counts; non-negative, and strictly positive at the anchor, since the
+anchor's count is a denominator.}
 
-\item{amplitude}{numeric, a noise-corrected amplitude per condition (see [rms_true()]).}
+\item{amplitude}{numeric, a noise-corrected amplitude per condition (see [rms_true()]); strictly
+positive at the anchor for the same reason.}
 
-\item{noise_floor}{numeric, the noise floor per condition.}
+\item{noise_floor}{numeric, the noise floor per condition; strictly positive.}
 
 \item{anchor}{the condition to express ratios against.}
 
 \item{max_floor_spread}{the largest ratio between the highest and lowest noise floor at which the
-floors may be treated as shared. The default of 1.1 is a convention, not a result: it says the
-floors must agree to within ten per cent. It is exposed because the right value depends on how much
-amplitude distortion the caller is willing to tolerate, and because a hard-coded threshold invites
-the reader to assume it was derived. For reference, the dataset in the accompanying paper has a
-spread of 1.47 and fails at any threshold below that.}
+floors may be treated as shared. The comparison is inclusive, so a spread exactly equal to this
+value counts as shared. The default of 1.1 is a convention, not a result: it says the floors must
+agree to within ten per cent. It is exposed because the right value depends on how much amplitude
+distortion the caller is willing to tolerate, and because a hard-coded threshold invites the reader
+to assume it was derived.}
 }
 \value{
 A data frame with count and amplitude ratios and the exaggeration factor, plus attributes
-  `floor_spread` and `floors_shared`. When `floors_shared` is `FALSE` the count must not be read as
-  an amplitude ordering, and the exaggeration column says by how much it would mislead.
+  `floor_spread`, `floors_shared`, `max_floor_spread` and `anchor`. When `floors_shared` is `FALSE`
+  the count should not be read as an amplitude ordering, and the exaggeration column says by how much
+  it would mislead.
 }
 \description{
-It is only when the noise floors are shared. This returns the two orderings side by side and the
-factor by which the count exaggerates each difference, so that the answer is a number rather than an
-impression. The exaggeration factor is `(amplitude ratio) / (count ratio)` against a named anchor.
+It is only when the detection thresholds are comparable. This returns the two orderings side by side
+and the factor by which the count exaggerates each difference, so that the answer is a number rather
+than an impression. The exaggeration factor is `(amplitude ratio) / (count ratio)` against a named
+anchor.
 }

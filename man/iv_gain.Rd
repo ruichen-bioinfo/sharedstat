@@ -9,15 +9,16 @@ iv_gain(e, R, S, naive = TRUE, min_abs_cor = 0.1, n_boot = 0L, seed = 1L)
 \arguments{
 \item{e}{numeric, the contrast of interest (response minus shared reference).}
 
-\item{R}{numeric, the shared reference arm.}
+\item{R}{numeric, the shared reference arm as measured.}
 
-\item{S}{numeric, the instrument: correlated with the reference's signal, independent of its error.}
+\item{S}{numeric, the instrument.}
 
 \item{naive}{logical; if `TRUE`, also return the naive OLS slope for comparison.}
 
-\item{min_abs_cor}{the smallest `|cor(R, S)|` at which the instrument is treated as adequate. Below it a
-warning is raised, because the estimator is a ratio of covariances whose denominator is then near zero:
-it returns a number rather than failing, and that number can be far from the truth.}
+\item{min_abs_cor}{the smallest `|cor(R, S)|` at which the instrument is treated as adequate, in
+\[0, 1\]. Below it a warning is raised, because the estimator is a ratio of covariances whose
+denominator is then near zero: it returns a number rather than failing, and that number can be far
+from the truth. The default of 0.1 is a convention, not a derived threshold.}
 
 \item{n_boot}{number of bootstrap resamples used to attach a standard error and a percentile interval.
 Zero, the default, skips it. A ratio of covariances has no useful closed-form standard error at small
@@ -27,17 +28,20 @@ samples, so an interval is resampled rather than approximated.}
 }
 \value{
 A list with `gamma`, `n`, `cor_RS` and `instrument_strength`; when `naive = TRUE` also
-  `gamma_naive` and `bias` (their difference); and when `n_boot > 0` also `se`, `ci` and
-  `n_boot_failed` (resamples in which the instrument was degenerate).
+  `gamma_naive` and `naive_minus_iv`, their difference. That difference is **not** a bias: the true
+  gain is unknown here, so it measures how far the naive estimate sits from the instrumented one, and
+  nothing more. The field `bias` is retained as a deprecated alias of `naive_minus_iv` and will be
+  removed. When `n_boot > 0` the list also has `se`, `ci` and `n_boot_failed`; if every resample was
+  degenerate, `se` and `ci` are `NA` and a warning is raised.
 }
 \description{
 When two contrasts are formed against the same reference, the reference's error enters both with
 opposite sign and the ordinary slope of one on the other acquires a bias that does not vanish with
 sample size. Using a third quantity that shares the reference's signal but not its error as an
-instrument removes that bias:  `gamma = 1 + cov(e_i, S) / cov(R, S)`.
+instrument removes that bias: `gamma = 1 + cov(e, S) / cov(R, S)`.
 }
 \details{
-The estimator does not merely rescale: in the design reported in the accompanying paper it
-**reorders** the units being compared. That is the practically important consequence, because a bias
-that rescaled everything would leave comparative conclusions intact.
+The estimator requires an instrument `S` with `cor(S, R) != 0` and `S` independent of both measurement
+errors. Neither condition can be verified from `(e, R, S)` alone; the first stage is reported so that
+the part which can be checked is visible.
 }

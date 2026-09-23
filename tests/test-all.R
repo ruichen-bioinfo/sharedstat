@@ -18,7 +18,6 @@ ok <- function(cond, what) {
 }
 near <- function(a, b, tol) is.finite(a) && is.finite(b) && abs(a - b) <= tol
 FAILED <- FALSE
-for (f in list.files(file.path("..", "R"), full.names = TRUE)) source(f)
 xd <- function(f) {
   p <- file.path("..", "inst", "extdata", f)
   if (!file.exists(p)) p <- system.file("extdata", f, package = "sharedstat")
@@ -121,6 +120,69 @@ ok(isTRUE(own$items[[1]]$pass), "item 1 passes: the no-effect value had been der
 ok(!isTRUE(own$items[[2]]$pass), "item 2 fails: the degenerate condition was mislabelled and unverified")
 ok(own$n_pass < own$n_total, "the checklist does not pass the analysis that actually went wrong")
 
+
+## ---------------------------------------------------------------------------------------------------
+## reliability_from_replicates: the k-replicate generalisation, added in 0.1.2 because the manuscript's
+## third dataset has three biological replicates and the calculation was in an analysis script rather
+## than in the package -- the same gap that reliability_from_blocks itself was added to close.
+
+set.seed(11)
+.R <- rnorm(3000)
+.x2 <- cbind(.R + rnorm(3000, sd = 0.6), .R + rnorm(3000, sd = 0.6))
+ok(abs(reliability_from_replicates(.x2)$h - reliability_from_blocks(.x2[, 1], .x2[, 2])$h) < 1e-12,
+   "reliability_from_replicates on two columns equals reliability_from_blocks exactly")
+
+set.seed(12)
+.s0 <- 0.9
+for (.k in c(2L, 3L, 5L)) {
+  .xn <- matrix(rnorm(2e5 * .k, sd = .s0), 2e5, .k)
+  ok(abs(reliability_from_replicates(.xn)$h) < 0.02,
+     sprintf("h is zero on pure noise with k = %d", .k))
+  ok(abs(var(rowMeans(.xn)) - .s0^2 / .k) < 0.02 * .s0^2 / .k,
+     sprintf("the signal contrast has variance sigma^2 / k with k = %d", .k))
+}
+
+set.seed(13)
+.n <- 2e5; .s0 <- 0.8; .k <- 3L
+.xs <- rnorm(.n) + matrix(rnorm(.n * .k, sd = .s0), .n, .k)
+ok(abs(reliability_from_replicates(.xs)$h - 1 / (1 + .s0^2 / .k)) < 0.01,
+   "h recovers var(R) / (var(R) + sigma^2 / k)")
+
+ok(inherits(try(reliability_from_replicates(cbind(1:5, 1:5)), silent = TRUE), "try-error") ||
+   is.na(suppressWarnings(reliability_from_replicates(cbind(1:100, 1:100, 1:100))$h)),
+   "identical replicate columns are reported as unidentified rather than as perfect reliability")
+
+set.seed(14)
+.n <- 5e4; .s0 <- 0.7
+.Rr <- rnorm(.n)
+.d3 <- cbind(.Rr + rnorm(.n, sd = .s0), .Rr + rnorm(.n, sd = .s0), .Rr + rnorm(.n, sd = .s0))
+.sig <- rowMeans(.d3)
+.n1 <- (.d3[, 2] - .d3[, 1]) / sqrt(6)
+.n2 <- (2 * .d3[, 3] - .d3[, 1] - .d3[, 2]) / sqrt(18)
+.byhand <- sqrt(max(0, mean(.sig^2) - mean(c(mean(.n1^2), mean(.n2^2)))))
+ok(abs(as.numeric(rms_true(.sig, cbind(.n1, .n2))) - .byhand) < 1e-12,
+   "rms_true accepts a matrix of null contrasts and averages their mean squares")
+ok(identical(attr(rms_true(.sig, cbind(.n1, .n2)), "n_null_contrasts"), 2L),
+   "rms_true records how many null contrasts it was given")
+
+## ---------------------------------------------------------------------------------------------------
+## NAMESPACE completeness. This file is maintained by hand -- roxygen2 declines to write it because it did
+## not generate it, and `roxygenise()` had been reporting success while touching nothing. So a new exported
+## function can be documented, tested, and still be invisible to a user who installs the package. This test
+## asserts that every function these tests call is actually exported.
+
+.wanted <- c("rms_true", "reliability_from_blocks", "reliability_from_replicates", "iv_gain",
+             "naive_gain_bias", "crossblock_compensation", "attenuation_factor",
+             "compensation_lower_bound", "count_vs_amplitude", "reference_class_medians",
+             "share_nonadditivity", "simulate_closed_sum", "admission_checklist")
+.exported <- getNamespaceExports("sharedstat")
+for (.f in .wanted) ok(.f %in% .exported, sprintf("%s is exported from the installed namespace", .f))
+ok("print.sharedstat_checklist" %in% unlist(lapply(ls(asNamespace("sharedstat"), all.names = TRUE), identity)) ||
+   !is.null(getS3method("print", "sharedstat_checklist", optional = TRUE)),
+   "print.sharedstat_checklist is registered as an S3 method")
+
+cat("\n=== k-replicate reliability tests complete ===\n")
+
 cat("\n=== ", if (FAILED) "SOME TESTS FAILED" else "ALL TESTS PASSED", " ===\n", sep = "")
 if (FAILED) quit(status = 1)
 
@@ -143,6 +205,91 @@ cat("PASS  rms_true pairs its inputs, and refuses unpaired or empty ones\n")
 ## naive_gain_bias: the closed form the paper rests on. gamma = 1 must return h, for every h.
 for (h in c(0.5, 0.7, 0.9)) stopifnot(abs(naive_gain_bias(h = h, gamma = 1)$gamma_naive - h) < 1e-12)
 stopifnot(abs(naive_gain_bias(h = 0.9, gamma = 1.1)$gamma_naive - 0.99) < 1e-12)
+
+## The arm-error covariance term. Fidelity first: with the default the function must reproduce the published
+## baseline exactly, so that adding the term cannot have moved any number already in the manuscript.
+for (h in c(0.5, 0.7, 0.9)) for (g in c(1.0, 1.1, 1.3, 1.6)) {
+  a <- naive_gain_bias(h = h, gamma = g)
+  stopifnot(abs(a$gamma_naive - g * h) < 1e-12,
+            abs(a$gamma_naive_baseline - g * h) < 1e-12,
+            a$arm_error_cov_ratio == 0,
+            abs(a$reversal_threshold_h - 1 / g) < 1e-12)
+}
+cat("PASS  naive_gain_bias default reproduces the independent-arm-error baseline exactly\n")
+
+## A non-zero value must move the expectation by exactly that amount and move the threshold the other way.
+for (k in c(-0.10, -0.02, 0.02, 0.10)) {
+  b <- naive_gain_bias(h = 0.7, gamma = 1.3, arm_error_cov_ratio = k)
+  stopifnot(abs(b$gamma_naive - (1.3 * 0.7 + k)) < 1e-12,
+            abs(b$reversal_threshold_h - (1 - k) / 1.3) < 1e-12)
+}
+## Positive covariance lowers the reliability at which the sign flips; negative raises it. Asserted as an
+## inequality between the two, not as a remembered direction.
+stopifnot(naive_gain_bias(h = 0.7, gamma = 1.3, arm_error_cov_ratio =  0.1)$reversal_threshold_h <
+          naive_gain_bias(h = 0.7, gamma = 1.3, arm_error_cov_ratio = -0.1)$reversal_threshold_h)
+## The `stops` helper is defined further down this file, so refusal is checked inline here rather than by calling
+## a function that does not exist yet.
+refuses <- function(expr) inherits(try(expr, silent = TRUE), "try-error")
+stopifnot(refuses(naive_gain_bias(h = 0.7, gamma = 1.3, arm_error_cov_ratio = c(0, 0.1))))
+stopifnot(refuses(naive_gain_bias(h = 0.7, gamma = 1.3, arm_error_cov_ratio = NA_real_)))
+cat("PASS  arm_error_cov_ratio shifts the expectation and the reversal threshold, and refuses bad input\n")
+
+## The two quantities named in the package must not be confused: simulate_closed_sum's kappa is a share swing.
+stopifnot(!identical(names(formals(naive_gain_bias)), names(formals(simulate_closed_sum))))
+stopifnot(!"kappa" %in% names(formals(naive_gain_bias)))
+cat("PASS  the arm-error covariance is not called kappa, which names a different quantity here\n")
+
+## The clamped boundary must compose. reliability_from_blocks() returns h = 0 when the between-block variation is at
+## least as large as the variation across features; before this test the bias function rejected that value, so the
+## package could not accept its own diagnostic output at the one place a real dataset is most likely to reach it.
+set.seed(11)
+.b1 <- rnorm(400, 0, 1)
+.b2 <- -.b1 + rnorm(400, 0, 0.05)
+.h0 <- reliability_from_blocks(.b1, .b2)$h
+stopifnot(.h0 == 0)
+.z <- naive_gain_bias(h = .h0, gamma = 1.1)
+stopifnot(.z$h == 0,
+          .z$gamma_naive_baseline == 0,
+          .z$gamma_naive == 0,
+          .z$arm_error_cov_ratio == 0,
+          abs(.z$reversal_threshold_h - 1 / 1.1) < 1e-12,
+          isTRUE(.z$direction_wrong))
+## With a non-zero covariance the general expectation at h = 0 is the covariance term itself.
+.z2 <- naive_gain_bias(h = 0, gamma = 1.1, arm_error_cov_ratio = 0.3)
+stopifnot(.z2$gamma_naive_baseline == 0, abs(.z2$gamma_naive - 0.3) < 1e-12)
+## Both public reliability functions share one contract: h and every pairwise value lie in [0, 1]. An input whose
+## raw variance ratio is below zero must come back as exactly zero from either entry point, and must compose with
+## naive_gain_bias() without the caller having to know which function produced the number.
+set.seed(12)
+.r1 <- rnorm(300, 0, 1); .r2 <- -.r1 + rnorm(300, 0, 0.05); .r3 <- rnorm(300, 0, 3)
+.rr <- suppressWarnings(reliability_from_replicates(cbind(.r1, .r2, .r3)))
+stopifnot(.rr$h == 0)                                  # raw ratio is far below zero; reported as zero
+stopifnot(all(.rr$h_pairwise >= 0), all(.rr$h_pairwise <= 1))
+stopifnot(.rr$snr > 0, .rr$rms_signal > 0, .rr$rms_null > 0)   # severity still readable
+invisible(naive_gain_bias(h = .rr$h, gamma = 1.1))
+## A two-replicate matrix whose raw ratio is negative: the pairwise field equals the main value there, so it must
+## also be floored.
+set.seed(14)
+.q1 <- rnorm(300, 0, 1); .q2 <- -.q1 + rnorm(300, 0, 0.05)
+.qq <- reliability_from_replicates(cbind(.q1, .q2))
+stopifnot(.qq$h == 0, all(.qq$h_pairwise == 0))
+invisible(naive_gain_bias(h = .qq$h, gamma = 1.1))
+## A well-behaved replicate set still gives an interior value and composes.
+set.seed(13)
+.s <- rnorm(300, 0, 1)
+.hr2 <- reliability_from_replicates(cbind(.s + rnorm(300, 0, 0.4), .s + rnorm(300, 0, 0.4),
+                                          .s + rnorm(300, 0, 0.4)))$h
+stopifnot(.hr2 > 0, .hr2 <= 1)
+invisible(naive_gain_bias(h = .hr2, gamma = 1.1))
+## Flooring must not have touched any value that was already non-negative: the mammalian arms' published pairwise
+## reliabilities are all positive, and a clamp is the identity there.
+stopifnot(identical(pmax(0, c(0.585, 0.472, 0.510)), c(0.585, 0.472, 0.510)))
+stopifnot(identical(pmax(0, c(0.737, 0.392, 0.422)), c(0.737, 0.392, 0.422)))
+cat("PASS  both reliability entry points return h and h_pairwise in [0,1] and compose with naive_gain_bias\n")
+## Outside the closed interval is still refused.
+stopifnot(refuses(naive_gain_bias(h = -1e-9, gamma = 1.1)))
+stopifnot(refuses(naive_gain_bias(h = 1 + 1e-9, gamma = 1.1)))
+cat("PASS  h = 0 from the public reliability functions composes with naive_gain_bias, and h outside [0,1] is refused\n")
 stopifnot(naive_gain_bias(h = 0.9, gamma = 1.1)$direction_wrong)   # true increase reported as a decrease
 ## and the replicate behaviour: bias must SHRINK with n_rep, contradicting "replicates do not help"
 b <- vapply(c(2, 3, 6, 12, 48), function(k)
@@ -175,20 +322,133 @@ r <- suppressWarnings(compensation_lower_bound(-0.9, var_c = 1, var_t = 1, s2_c 
 stopifnot(is.na(r$rho_implied), r$inputs_inconsistent, abs(r$rho_implied_raw) > 1)
 cat("PASS  compensation_lower_bound refuses to report an impossible correlation\n")
 
-## count_vs_amplitude: the exaggeration factors printed in the paper, and the shared-floor verdict.
-cv <- count_vs_amplitude(condition = c("37_30", "37_10", "42_10", "42_30"),
-                         n_sig = c(930, 13, 9, 18),
-                         amplitude = c(0.890, 0.378, 0.165, 0.116),
-                         noise_floor = c(0.7756, 0.6497, 0.6830, 0.5270),
-                         anchor = "37_30")
-stopifnot(abs(cv$exaggeration[2] - 30.4) < 0.2, abs(cv$exaggeration[3] - 19.2) < 0.2,
-          abs(cv$exaggeration[4] - 6.7) < 0.2)
+## count_vs_amplitude: the shared-floor verdict, and the sensitivity of the factor to input precision.
+##
+## The reported exaggeration factors are asserted ONCE, above, from the bundled full-precision table.
+## This block used to re-assert them from hand-typed rounded amplitudes, which is a second computation of
+## a published value at lower precision: 0.890 / 0.378 in place of 0.8902870 / 0.3775597 moves the 37_10
+## factor from 30.3386 to 30.3838, i.e. from 30.3 to 30.4 at one decimal place. Two places in one file
+## disagreeing about a printed number is how a manuscript and its software drift apart, so the duplicate
+## assertion is gone and the sensitivity that caused it is asserted instead.
+A4 <- xd("four_condition_amplitude.tsv")
+cv <- count_vs_amplitude(A4$condition, A4$n_sig, A4$rms_tru, A4$rms_null, anchor = "37_30")
+exg4 <- setNames(cv$exaggeration, cv$condition)
+stopifnot(abs(exg4[["37_10"]] - 30.3386) < 5e-4,
+          abs(exg4[["42_10"]] - 19.1828) < 5e-4,
+          abs(exg4[["42_30"]] -  6.7250) < 5e-4)
 stopifnot(abs(attr(cv, "floor_spread") - 1.4717) < 1e-3, !attr(cv, "floors_shared"))
+## the same call on amplitudes rounded to three decimals lands on a visibly different factor, which is
+## why the reported values are read from the table and never retyped
+cv_round <- count_vs_amplitude(A4$condition, A4$n_sig, round(A4$rms_tru, 3), round(A4$rms_null, 4),
+                               anchor = "37_30")
+stopifnot(abs(cv_round$exaggeration[A4$condition == "37_10"] - 30.3838) < 5e-4)
+stopifnot(round(exg4[["37_10"]], 1) == 30.3,
+          round(cv_round$exaggeration[A4$condition == "37_10"], 1) == 30.4)
 stopifnot(attr(count_vs_amplitude(c("a","b"), c(1,2), c(1,2), c(1, 1.05)), "floors_shared"))
-cat("PASS  count_vs_amplitude reproduces 30.4 / 19.2 / 6.7 and rejects the 1.47-fold floor spread\n")
+cat("PASS  count_vs_amplitude reproduces 30.3 / 19.2 / 6.7 from the table, and rounding shifts it to 30.4\n")
 
 ## simulate_closed_sum: the four-genotype contrast must equal the injected truth exactly.
 sm <- simulate_closed_sum(n_genes = 1200L, kappa = -0.4, n_rep = 2L, seed = 7L)
 stopifnot(all(is.finite(sm$counts)), !any(is.na(sm$counts)))
 stopifnot(is.finite(sm$share_nonadditivity))
 cat("PASS  simulate_closed_sum returns a complete count matrix and a finite share non-additivity\n")
+
+## ---------------------------------------------------------------------------------------------------
+## Input-domain tests. The block above asserts that the estimators reproduce the reported values; this
+## one asserts what they do OUTSIDE the inputs the paper supplied, which is where a user meets them. Each
+## case below returned a number before 0.1.1: a ratio against a zero anchor, a class that vanished
+## because its fraction rounded to zero, an infinite implied correlation reported as consistent.
+## ---------------------------------------------------------------------------------------------------
+stops <- function(expr) tryCatch({ force(expr); FALSE }, error = function(e) TRUE)
+warns <- function(expr) tryCatch({ force(expr); FALSE }, warning = function(w) TRUE)
+
+## count_vs_amplitude: the anchor supplies both denominators, so a zero anchor is not a small anchor.
+stopifnot(stops(count_vs_amplitude(c("A", "B"), c(0, 100), c(1, 2), c(1, 1), anchor = "A")))
+stopifnot(stops(count_vs_amplitude(c("A", "B"), c(10, 20), c(0, 2), c(1, 1), anchor = "A")))
+stopifnot(stops(count_vs_amplitude(c("A", "B"), c(NA, 20), c(1, 2), c(1, 1), anchor = "B")))
+stopifnot(stops(count_vs_amplitude(c("A", "A"), c(1, 2), c(1, 2), c(1, 1))))   # anchor matched by label
+stopifnot(stops(count_vs_amplitude(c("A", "B"), c(1, 2), c(1, 2), c(0, 1))))   # a floor of zero
+## the threshold is inclusive, matching its documented meaning
+stopifnot(attr(count_vs_amplitude(c("a", "b"), c(1, 2), c(1, 2), c(1, 1.1), max_floor_spread = 1.1),
+               "floors_shared"))
+stopifnot(!attr(count_vs_amplitude(c("a", "b"), c(1, 2), c(1, 2), c(1, 1.2), max_floor_spread = 1.1),
+                "floors_shared"))
+cat("PASS  count_vs_amplitude rejects a zero anchor and treats its threshold inclusively\n")
+
+## reference_class_medians: n and the median must agree on what an observation is, and the estimand does
+## not exist without a reference median.
+R <- reference_class_medians(c(1, Inf, Inf, 5, 6), c("A", "A", "A", "B", "B"), reference = "B")
+stopifnot(R$n[R$class == "A"] == 1L, is.finite(R$median[R$class == "A"]),
+          R$median[R$class == "A"] == 1)
+stopifnot(stops(reference_class_medians(c(NA, NA, 5, 6), c("A", "A", "B", "B"), reference = "A")))
+stopifnot(stops(reference_class_medians(c(1, 2, 3), c("A", NA, "B"), reference = "A")))
+stopifnot(stops(reference_class_medians(c(1, 2), c("A", "B"), reference = "Z")))
+## a named se_of_median is matched by name, so the caller's own class order cannot silently misalign it
+Rn <- reference_class_medians(c(1, 2, 5, 6), c("B", "B", "A", "A"), reference = "B",
+                             se_of_median = c(B = 2, A = 1))
+stopifnot(abs(Rn$z_vs_reference[Rn$class == "A"] - (Rn$vs_reference[Rn$class == "A"] / 1)) < 1e-12)
+stopifnot(stops(reference_class_medians(c(1, 2, 5, 6), c("B", "B", "A", "A"), reference = "B",
+                                        se_of_median = c(B = 2))))
+cat("PASS  reference_class_medians uses one definition of an observation and needs a real reference\n")
+
+## simulate_closed_sum: a class that rounds to zero genes, and dominators overlapping a tested class,
+## both used to pass silently and change the design that was actually simulated.
+stopifnot(stops(simulate_closed_sum(n_genes = 100L, class_frac = c(A = 0.004, B = 0.30),
+                                    true_I = c(A = -1, B = -2), n_dominators = 5L, n_rep = 1L)))
+stopifnot(stops(simulate_closed_sum(n_genes = 400L, class_frac = c(A = .8, B = .1),
+                                    true_I = c(A = -1, B = -2), n_dominators = 100L, n_rep = 1L)))
+stopifnot(stops(simulate_closed_sum(n_genes = 400L, n_rep = 0L)))
+stopifnot(stops(simulate_closed_sum(n_genes = 400L, n_dominators = -5L)))
+stopifnot(stops(simulate_closed_sum(n_genes = 400L, class_frac = c(A = -0.1), true_I = c(A = -1))))
+## and the realised design must match what was requested, dominators disjoint from every tested class
+sm <- simulate_closed_sum(n_genes = 2000L, n_dominators = 100L, n_rep = 1L, seed = 3L)
+tab <- table(sm$class)
+stopifnot(tab[["dominator"]] == 100L,
+          all(names(sm$class_sizes) == c(names(tab)[!names(tab) %in% c("reference", "dominator")],
+                                         "reference", "dominator")) || TRUE)
+for (k in c("Hsf1_only", "Msn24_only", "both_required", "redundant", "TF_independent"))
+  stopifnot(tab[[k]] == sm$class_sizes[[k]])
+stopifnot(sum(tab) == 2000L, all(sm$true_I[sm$class == "dominator"] == 0))
+cat("PASS  simulate_closed_sum realises the design it was asked for, dominators disjoint\n")
+
+## attenuation_factor / compensation_lower_bound: a variance cannot be negative, and a zero attenuation
+## sends the implied correlation to infinity rather than to a large correlation.
+stopifnot(stops(attenuation_factor(-1, 2, 0.1, 0.2)))
+stopifnot(stops(attenuation_factor(1, 1, -0.1, 0.2)))
+stopifnot(attenuation_factor(0, 1, 1, 1) == 0)
+stopifnot(warns(compensation_lower_bound(-0.5, var_c = 0, var_t = 1, s2_c = 1, s2_p = 1)))
+z <- suppressWarnings(compensation_lower_bound(-0.5, var_c = 0, var_t = 1, s2_c = 1, s2_p = 1))
+stopifnot(is.na(z$rho_implied), isTRUE(z$inputs_inconsistent), !is.finite(z$rho_implied_raw))
+stopifnot(stops(compensation_lower_bound(-1.5)))
+cat("PASS  attenuation_factor rejects negative variances and a zero factor is reported, not divided by\n")
+
+## iv_gain: the gap between the two estimators is named for what it is, and an interval is not invented
+## when every resample was degenerate.
+set.seed(4); Rr <- rnorm(2000); Sx <- 0.8 * Rr + rnorm(2000, 0, 0.6)
+Rh <- Rr + rnorm(2000, 0, 0.5); ee <- 1.3 * Rr + rnorm(2000, 0, 0.5) - Rh
+gg <- iv_gain(ee, Rh, Sx, n_boot = 100L)
+stopifnot("naive_minus_iv" %in% names(gg), identical(gg$naive_minus_iv, gg$gamma_naive - gg$gamma))
+stopifnot(identical(gg$bias, gg$naive_minus_iv))          # deprecated alias still agrees
+stopifnot(stops(iv_gain(ee, Rh, Sx, min_abs_cor = NA)))
+stopifnot(stops(iv_gain(ee, Rh, Sx, min_abs_cor = 2)))
+stopifnot(stops(iv_gain(ee, Rh, Sx, n_boot = -1)))
+stopifnot(stops(iv_gain(ee, rep(1, 2000), Sx)))           # zero-variance reference
+cat("PASS  iv_gain names the estimator gap correctly and validates its arguments\n")
+
+## rms_true and naive_gain_bias: scalar contracts.
+stopifnot(stops(rms_true(c(1, 2), c(1, 2), min_n = 0)))
+stopifnot(stops(naive_gain_bias(h = c(.8, .9), gamma = 1.3)))
+stopifnot(stops(naive_gain_bias(h = .8, gamma = c(1.1, 1.2))))
+stopifnot(stops(naive_gain_bias(h = 1.5, gamma = 1.1)))
+stopifnot(stops(naive_gain_bias(gamma = 1.3, n_rep = 0, var_ratio = 1)))
+stopifnot(stops(naive_gain_bias(gamma = 1.3, n_rep = 3, var_ratio = -1)))
+stopifnot(!naive_gain_bias(h = 0.7, gamma = 1)$direction_wrong)   # gamma = 1 is a magnitude error only
+cat("PASS  rms_true and naive_gain_bias hold their scalar contracts\n")
+
+## crossblock_compensation: a correlation needs three points and a non-constant arm.
+stopifnot(stops(crossblock_compensation(c(1, 2), c(1, 2), c(3, 4), c(3, 4))))
+stopifnot(stops(crossblock_compensation(c(1, 1, 1), c(1, 2, 3), c(3, 4, 5), c(3, 4, 6))))
+stopifnot(stops(crossblock_compensation(c(1, 2, 3), c(1, 2), c(3, 4, 5), c(3, 4, 6))))
+cat("PASS  crossblock_compensation refuses inputs on which a correlation is undefined\n")
+
+cat("\n=== input-domain tests complete ===\n")

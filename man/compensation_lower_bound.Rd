@@ -7,13 +7,17 @@
 compensation_lower_bound(r_observed, ...)
 }
 \arguments{
-\item{r_observed}{the cross-block estimate.}
+\item{r_observed}{the cross-block estimate, a single number in \[-1, 1\].}
 
-\item{...}{passed to [attenuation_factor()]; if supplied, the implied `rho` is also returned.}
+\item{...}{passed to [attenuation_factor()]; if the four variance components are supplied, the
+implied `rho` is also returned.}
 }
 \value{
 A list with `lower_bound` (|r_observed|) and, when the variance components are given,
-  `rho_implied`. Never returns a point estimate of `rho` without them, because there is none.
+  `attenuation`, `rho_implied` and `inputs_inconsistent`. Never returns a point estimate of `rho`
+  without the components, because there is none. `rho_implied` is `NA` whenever it would lie outside
+  \[-1, 1\] or the attenuation is zero, with `inputs_inconsistent = TRUE` and the unclamped value in
+  `rho_implied_raw`.
 }
 \description{
 State a reported compensation as the lower bound it is

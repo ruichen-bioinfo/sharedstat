@@ -15,39 +15,45 @@ simulate_closed_sum(
   n_dominators = 150L,
   dominator_boost = 3,
   n_rep = 3L,
+  lib = 2e+07,
   seed = 1L
 )
 }
 \arguments{
-\item{n_genes}{total genes.}
+\item{n_genes}{total genes; at least one per tested class plus the dominators.}
 
-\item{class_frac}{named numeric, the fraction of genes in each tested class; the remainder is the
-reference class.}
+\item{class_frac}{named numeric, the non-negative fraction of genes in each tested class; the
+remainder, less the dominators, is the reference class. Each fraction must be large enough to give
+at least one gene, since a class requested but not realised would leave `true_I` describing genes
+that do not exist.}
 
-\item{true_I}{named numeric, the true interaction per class (same names as `class_frac`).}
+\item{true_I}{named numeric, the true interaction per class (same names, same order, as `class_frac`).}
 
 \item{reference_true_I}{the true interaction of the reference class; set non-zero to simulate a
 contaminated reference.}
 
-\item{kappa}{the share swing applied to the dominator set in the double genotype; negative values
-give negative share non-additivity, which is the sign real data may have.}
+\item{kappa}{the share swing applied to the dominator set in the double genotype; negative values give
+negative share non-additivity, the sign observed in the dataset analysed in the accompanying paper.}
 
-\item{n_dominators, dominator_boost}{size and log-expression boost of the dominator set.}
+\item{n_dominators, dominator_boost}{size and log-expression boost of the dominator set. The dominators
+occupy the last `n_dominators` genes and must not overlap any tested class.}
 
-\item{n_rep}{replicates per genotype.}
+\item{n_rep}{replicates per genotype, at least one.}
+
+\item{lib}{library size drawn per sample.}
 
 \item{seed}{random seed.}
 }
 \value{
-A list with the count matrix, the design, the realised share non-additivity, and the true
-  interaction per gene, suitable for pushing through any normalisation pipeline.
+A list with the count matrix, the design, the class assignment, the true interaction per gene,
+  the responding-class share per genotype and its non-additivity, suitable for pushing through any
+  normalisation pipeline.
 }
 \description{
-The point of the simulator is that compositionality **emerges**: counts are drawn from a closed-sum
-multinomial, so share competition is a consequence of the sampling rather than an offset added by
-hand. A separate high-expression "dominator" set, belonging to none of the tested classes, carries the
-share swing, so the tested classes experience dilution only. That separation matters: an earlier
-version of this design added the swing to the responding classes' own expression, which changed their
-true interaction at the same time and made every class's apparent bias exactly equal to the injected
-amount -- a self-fulfilling result.
+Compositionality emerges here rather than being added: counts are drawn from a closed-sum multinomial,
+so share competition is a consequence of the sampling. A separate high-expression "dominator" set,
+belonging to none of the tested classes, carries the share swing, so the tested classes experience
+dilution only. That separation is what makes the simulation a known-truth one: if the swing were
+applied to the responding classes' own expression it would change their true interaction at the same
+time, and every class's apparent bias would equal the injected amount by construction.
 }

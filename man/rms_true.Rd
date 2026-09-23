@@ -9,33 +9,29 @@ rms_true(s, n, min_n = 2L)
 \arguments{
 \item{s}{numeric, the signal contrast (for two replicate blocks, `(b1 + b2) / 2`).}
 
-\item{n}{numeric, the null contrast built to contain no effect (for two blocks, `(b2 - b1) / 2`).}
+\item{n}{The null contrast, carrying error and no signal. A numeric vector for a two-replicate
+design, or a matrix or data frame with one column per orthogonal null contrast when there are
+three or more replicates; in the matrix case the per-contrast mean squares are averaged.}
 
-\item{min_n}{minimum number of complete pairs required; below this the answer is not estimable and an
-error is raised rather than a number returned.}
+\item{min_n}{minimum number of complete pairs required; below this the quantity is not estimable and
+an error is raised rather than a number returned. Must be a single integer of at least 2, since a
+mean square over one pair carries no information about dispersion.}
 }
 \value{
 A single non-negative number with attributes `n_pairs` and `n_dropped`. Exactly zero means the
-  signal did not exceed its own noise and must be reported as such, not as a small positive number.
+  signal did not exceed its own noise.
 }
 \description{
 `rms_true(s, n) = sqrt(max(0, mean(s^2) - mean(n^2)))`. The subtraction removes the variance the
 null contrast contributes, so the result is an amplitude rather than a dispersion. It is clamped at
-zero: when the null exceeds the signal the honest answer is "not distinguishable from noise", not a
-negative amplitude, and a returned zero must be reported as such rather than treated as a small
-positive number.
+zero: when the null exceeds the signal the answer is "not distinguishable from noise", not a negative
+amplitude, and a returned zero should be reported as such rather than treated as a small positive
+number.
 }
 \details{
-The subtraction is only meaningful when both means are taken over the **same** features. Dropping
-missing values independently from `s` and from `n` silently compares a signal computed on one feature
-set against a noise floor computed on another, and the error is not symmetric: it inflates the
-amplitude whenever the features missing from `n` are the loud ones. The function therefore pairs the
-inputs and uses complete cases only. An earlier version of this function did not, and on
-`s = c(1,2,3,4,10)`, `n = c(1,2,3,4,NA)` it returned 4.30 where the paired answer is exactly 0 --
-"not distinguishable from noise" reported as a large positive amplitude.
-
-In the analysis this package accompanies the hazard could not fire, because there the signal and null
-contrasts are two linear combinations of the same four vectors and so are missing on exactly the same
-features. That is a property of that pipeline, not of the estimator, which is why the guard belongs
-here: the next caller's contrasts may be assembled separately.
+The subtraction is only defined when both means are taken over the same features. Dropping missing
+values independently from `s` and from `n` would compare a signal computed on one feature set against
+a noise floor computed on another, and the error is not symmetric: it inflates the amplitude whenever
+the features missing from `n` are the loud ones. The inputs are therefore paired and complete cases
+used.
 }

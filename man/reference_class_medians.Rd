@@ -7,14 +7,17 @@
 reference_class_medians(value, class, reference, se_of_median = NULL)
 }
 \arguments{
-\item{value}{numeric, one value per feature.}
+\item{value}{numeric, one value per feature. Non-finite values are dropped.}
 
-\item{class}{character or factor, class assignment; must be mutually exclusive.}
+\item{class}{character or factor, class assignment; must be mutually exclusive and free of missing
+values, since a missing class would be dropped silently and change every denominator.}
 
-\item{reference}{the class to read against.}
+\item{reference}{the class to read against. It must have at least one finite value: without a
+reference median the estimand does not exist, so this is an error rather than a row of `NA`.}
 
-\item{se_of_median}{optional numeric of the same length as the number of classes, in the order of
-`sort(unique(class))`, used to form z values.}
+\item{se_of_median}{optional numeric, used to form z values. If named, it is matched to the classes by
+name; if unnamed it is taken in the order of `sort(unique(class))`. Naming it is recommended, since
+an unnamed vector in the caller's own class order is silently wrong.}
 }
 \value{
 A data frame with `n`, `median`, `vs_reference` and (when available) `z_vs_reference`.
@@ -22,12 +25,12 @@ A data frame with `n`, `median`, `vs_reference` and (when available) `z_vs_refer
 \description{
 On compositional data an interaction contrast can carry a non-zero genome-wide median even though its
 coefficients sum to zero. Reading a class median "against zero" is then a hidden assumption. This
-returns each class median as a **difference from a named reference class**, which is the reading that
-is stable across normalisation regimes.
+returns each class median as a difference from a named reference class, which is the reading that is
+stable across normalisation regimes.
 }
 \details{
 Two limitations are not removable and are returned in the `caveats` attribute. The prescription
-recovers **differences, not absolute values**: if the reference class carries real signal it
-propagates into every estimate. And no within-dataset analysis distinguishes "the reference class has
-real biology" from "the reference class retains residual composition".
+recovers differences, not absolute values: if the reference class carries real signal it propagates
+into every estimate. And no within-dataset analysis distinguishes "the reference class has real
+biology" from "the reference class retains residual composition".
 }

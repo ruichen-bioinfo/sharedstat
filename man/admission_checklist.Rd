@@ -17,10 +17,11 @@ admission_checklist(
 \arguments{
 \item{no_effect_value}{the statistic's value under no effect, or `NA` if not derived.}
 
-\item{degenerate_condition}{a character label naming which degenerate condition `no_effect_value`
-belongs to, and `simulation_confirms` whether a simulation verified the label.}
+\item{degenerate_condition}{A character label naming which degenerate condition `no_effect_value`
+belongs to, or `NA` when the condition has not been identified.}
 
-\item{simulation_confirms}{logical.}
+\item{simulation_confirms}{Logical: whether a simulation was run confirming that the labelled condition
+reproduces `no_effect_value`. `NA` when no such simulation was run.}
 
 \item{beta_range}{numeric of length 2, the normalisation exponent range reported, or `NULL`.}
 
@@ -43,7 +44,7 @@ the noise floors are shared; (5) for compositional data, state the reference cla
 difference to the absolute value.
 }
 \details{
-Item 2 exists because the authors of the accompanying paper failed it: the no-effect value had been
-derived correctly but belonged to a different degenerate condition than the one it was labelled with,
-and a checklist stopping at item 1 would not have caught that.
+Item 2 is the one an analyst is most likely to skip: a value can be derived for the no-effect case
+and still be the wrong no-effect case. The worked example in the package README shows a real
+instance.
 }

@@ -8,14 +8,15 @@
 #' the noise floors are shared; (5) for compositional data, state the reference class and prefer the
 #' difference to the absolute value.
 #'
-#' Item 2 exists because the authors of the accompanying paper failed it: the no-effect value had been
-#' derived correctly but belonged to a different degenerate condition than the one it was labelled with,
-#' and a checklist stopping at item 1 would not have caught that.
+#' Item 2 is the one an analyst is most likely to skip: a value can be derived for the no-effect case
+#' and still be the wrong no-effect case. The worked example in the package README shows a real
+#' instance.
 #'
 #' @param no_effect_value the statistic's value under no effect, or `NA` if not derived.
-#' @param degenerate_condition a character label naming which degenerate condition `no_effect_value`
-#'   belongs to, and `simulation_confirms` whether a simulation verified the label.
-#' @param simulation_confirms logical.
+#' @param degenerate_condition A character label naming which degenerate condition `no_effect_value`
+#'   belongs to, or `NA` when the condition has not been identified.
+#' @param simulation_confirms Logical: whether a simulation was run confirming that the labelled condition
+#'   reproduces `no_effect_value`. `NA` when no such simulation was run.
 #' @param beta_range numeric of length 2, the normalisation exponent range reported, or `NULL`.
 #' @param measured_beta the measured exponent, or `NA`.
 #' @param floors_shared logical, from [count_vs_amplitude()], or `NA` if no count is reported.
@@ -32,7 +33,7 @@ admission_checklist <- function(no_effect_value = NA_real_,
          catches = "shared reference arm; residual anticorrelated with its own component"),
     list(n = 2, text = "which degenerate condition, stated and simulation-verified",
          pass = !is.na(degenerate_condition) && isTRUE(simulation_confirms),
-         catches = "the authors' own inverted inference: item 1 passed and the conclusion was still wrong"),
+         catches = "a no-effect value derived for the wrong condition: item 1 passes and the conclusion is still wrong"),
     list(n = 3, text = "reported across the normalisation exponent with the measured one marked",
          pass = !is.null(beta_range) && length(beta_range) == 2 && is.finite(measured_beta),
          catches = "amplitude-carried enrichment"),

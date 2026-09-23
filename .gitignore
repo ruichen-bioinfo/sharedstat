@@ -4,7 +4,6 @@
 .Rproj.user/
 *.Rproj
 .Rcheck/
-*.Rcheck/
 *.tar.gz
 *.tgz
 

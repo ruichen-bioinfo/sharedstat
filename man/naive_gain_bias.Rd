@@ -4,39 +4,68 @@
 \alias{naive_gain_bias}
 \title{Analytic bias of the naive gain estimator against a shared reference}
 \usage{
-naive_gain_bias(h = NULL, gamma, n_rep = NULL, var_ratio = NULL)
+naive_gain_bias(
+  h = NULL,
+  gamma,
+  n_rep = NULL,
+  var_ratio = NULL,
+  arm_error_cov_ratio = 0
+)
 }
 \arguments{
-\item{h}{reliability of the reference arm, `var(R) / var(R_hat)`, in (0, 1].}
+\item{h}{reliability of the reference arm, `var(R) / var(R_hat)`, a single number in [0, 1]. Zero is
+admissible and is what [reliability_from_blocks()] and [reliability_from_replicates()] return when the
+between-block variation is at least as large as the variation across features. It says that no
+reproducible signal was resolved above that contrast's own noise, which is an uninformative reference
+rather than a negative reliability, and not a statement that the biological signal is absent. At `h = 0`
+the baseline expectation is 0 and the general one is `arm_error_cov_ratio`.}
 
-\item{gamma}{the true gain.}
+\item{gamma}{the true gain, a single finite number.}
 
-\item{n_rep}{optional replicate count; when given with `var_ratio`, `h` is computed rather than taken.}
+\item{n_rep}{optional replicate count; with `var_ratio`, `h` is computed rather than taken.}
 
 \item{var_ratio}{optional `var(u_per_observation) / var(R)`; with `n_rep` gives `h = 1/(1 + var_ratio/n_rep)`.}
+
+\item{arm_error_cov_ratio}{the two arms' measurement-error covariance divided by the variance of the
+observed reference, `cov(u, v) / var(R_hat)`. Zero, the default, is the independent-arm-error baseline;
+the returned `gamma_naive` is then `gamma * h`. A non-zero value shifts both the expectation and the
+reversal threshold, which becomes `(1 - arm_error_cov_ratio) / gamma`. Sharing a library between the two
+arms permits a non-zero value but does not fix its sign, so it is a quantity to report rather than assume.
+Note that `simulate_closed_sum` has an unrelated argument named `kappa`; the two are different quantities
+and are deliberately not given the same name.}
 }
 \value{
-A list with `h`, `gamma_naive`, `bias`, and `direction_wrong` (whether the naive estimate and
-  the truth fall on opposite sides of 1, which is the failure that changes conclusions).
+A list with `h`, `gamma_naive`, `bias` (`gamma_naive - gamma`, a true bias here because
+  `gamma` is supplied) and `direction_wrong` (whether the naive estimate and the truth fall on
+  opposite sides of 1, which is the failure that changes conclusions).
 }
 \description{
-The bias has a closed form, and writing it down is more useful than tabulating simulations of it.
 With true reference signal \eqn{R}, measured \eqn{\hat R = R + u}, response arm \eqn{\gamma R}
 measured with its own error, and \eqn{h = \mathrm{var}(R) / \mathrm{var}(\hat R)}:
 }
 \details{
-\deqn{\mathrm{slope} = (\gamma - 1)h - (1 - h), \qquad \hat\gamma_{naive} = 1 + \mathrm{slope} = \gamma h.}
+\deqn{\mathrm{slope} = (\gamma - 1)h - (1 - h), \qquad \hat\gamma_{naive} = 1 + \mathrm{slope} = \gamma h,}
+which holds when the two arms' measurement errors are independent. Retaining their covariance,
+\deqn{\mathbb{E}[\hat\gamma_{naive}] = \gamma h + \mathrm{cov}(u, v) / \mathrm{var}(\hat R),}
+so the first expression is a baseline rather than the general case.
 
 Three consequences follow, and they are not the same consequence stated three ways.
 \itemize{
-  \item At \eqn{\gamma = 1} -- no divergence whatsoever -- the naive estimator returns \eqn{h}. Any
-    \eqn{h < 1} therefore produces apparent divergence from nothing.
-  \item The bias is \eqn{O(1)} in the number of **features**. Measuring more genes makes the wrong
+  \item At \eqn{\gamma = 1} the naive estimator returns \eqn{h}, so any \eqn{h < 1} produces apparent
+    divergence where there is none.
+  \item The bias is \eqn{O(1)} in the number of features. Measuring more features makes the wrong
     value more precise; it does not move it.
-  \item The bias is \eqn{O(1/n_{rep})} in the number of **replicates**, because replication shrinks
-    the reference arm's measurement variance and so raises \eqn{h}. Replicates help, but only through
-    \eqn{h}, and no finite number of them reaches \eqn{h = 1}.
+  \item The bias is \eqn{O(1/n_{rep})} under independent replicate averaging, because averaging
+    shrinks the reference arm's measurement variance and so raises \eqn{h}. Replicates help, but only
+    through \eqn{h}, and no finite number of them reaches \eqn{h = 1}.
 }
 The second and third points are easy to conflate, and conflating them gives the false statement that
 replication cannot help at all.
+}
+\section{The reversal threshold at the edges}{
+
+`reversal_threshold_h` is `(1 - arm_error_cov_ratio) / gamma` and is reported unclamped. A value above 1
+means every admissible reliability lies below the threshold, so the reversal is unavoidable for that gain;
+a value below 0 means none does, so it is impossible. Clamping the number to [0, 1] would hide which of
+those two situations holds.
 }

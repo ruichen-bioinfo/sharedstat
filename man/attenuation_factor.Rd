@@ -7,14 +7,16 @@
 attenuation_factor(var_c, var_t, s2_c, s2_p)
 }
 \arguments{
-\item{var_c, var_t}{true variances of the two components.}
+\item{var_c, var_t}{true variances of the two components; non-negative.}
 
-\item{s2_c, s2_p}{measurement-error variances of the component and of the total.}
+\item{s2_c, s2_p}{measurement-error variances of the component and of the total; non-negative.}
 }
 \value{
-The multiplicative attenuation factor, in (0, 1].
+The multiplicative attenuation factor, in \[0, 1\]. It is 0 when either true variance is 0,
+  in which case no correlation is identified and [compensation_lower_bound()] reports that rather
+  than dividing by it.
 }
 \description{
 `cor(hat c, hat t) = rho * sd(c) * sd(t) / (sqrt(var(c) + s2_c) * sqrt(var(t) + s2_p + s2_c))`.
-The factor is at most 1, so the observed magnitude is a lower bound on `|rho|`.
+The factor is at most 1, so an observed magnitude is a lower bound on `|rho|`.
 }

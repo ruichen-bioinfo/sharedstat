@@ -4,25 +4,28 @@
 \alias{crossblock_compensation}
 \title{Cross-block estimator of compensatory divergence, and its attenuation}
 \usage{
-crossblock_compensation(cis_b1, cis_b2, par_b1, par_b2)
+crossblock_compensation(cis_b1, cis_b2, par_b1, par_b2, min_n = 3L)
 }
 \arguments{
 \item{cis_b1, cis_b2}{numeric, the component estimated in block 1 and block 2.}
 
 \item{par_b1, par_b2}{numeric, the total estimated in block 1 and block 2.}
+
+\item{min_n}{minimum number of complete cases required; a correlation on fewer than three points is
+either undefined or determined by the points themselves.}
 }
 \value{
 A list with `r_cross` (the cross-block estimate), `r_naive` (both from one block, for
-  comparison) and `artefact` (their difference).
+  comparison), `artefact` (their difference) and `n`.
 }
 \description{
 The correlation between a component and a residual formed by subtracting it is negative by
 construction. Estimating the two from *different* replicate blocks removes the shared error that
 creates most of that artefact. What remains is attenuated by measurement error, in a known direction:
-the estimate is therefore a **lower bound** in magnitude on the underlying correlation.
+the estimate is therefore a lower bound in magnitude on the underlying correlation.
 }
 \details{
-Two consequences follow and are easy to get wrong. A weaker reported compensation does not license
-the inference that compensation is weaker, because it may reflect fewer replicates. And compensation
-magnitudes are **not comparable across designs with different replicate structure**.
+Two consequences are easy to get wrong. A weaker reported compensation does not license the inference
+that compensation is weaker, because it may reflect fewer replicates. And compensation magnitudes are
+not comparable across designs with different replicate structure.
 }

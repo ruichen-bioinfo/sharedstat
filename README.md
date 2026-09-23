@@ -2,11 +2,20 @@
 
 Diagnose and correct statistics built from a shared component.
 
-[![DOI](https://zenodo.org/badge/1363200240.svg)](https://doi.org/10.5281/zenodo.22693748)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![R >= 4.0](https://img.shields.io/badge/R-%3E%3D%204.0-blue.svg)](https://www.r-project.org/)
+[![DOI (v0.1.0)](https://img.shields.io/badge/DOI%20v0.1.0-10.5281%2Fzenodo.22693748-blue.svg)](https://doi.org/10.5281/zenodo.22693748)
 
-Version 0.1.0
+<!-- The badge is labelled with the version it resolves to, so that a reader can tell which version’s DOI it is. -->
+
+This source tree is version 0.1.2. It adds the two reliability functions, `reliability_from_blocks()` and
+`reliability_from_replicates()`, which version 0.1.0 does not contain, and relaxes a domain check; `NEWS.md` lists
+what changed. **A reliability computed with this tree cannot be reproduced with v0.1.0**, which exports eleven
+functions where this exports thirteen.
+
+The citable version DOI for a release is the one shown on that release’s Zenodo record, which the GitHub release
+links to; `CITATION.cff` in the released tree carries it. The badge above resolves to the record for the archived
+version it was minted for, so cite the version DOI rather than the badge when the distinction matters.
 
 ## What it is
 
@@ -41,9 +50,17 @@ Given an instrument `S` correlated with `R` but independent of the measurement e
 
 ## Install
 
+From the source tarball, which works now:
+
 ```r
-# install.packages("remotes")
-remotes::install_github("ruichen-bioinfo/sharedstat")
+install.packages("sharedstat_0.1.2.tar.gz", repos = NULL, type = "source")
+```
+
+Or from GitHub, pinned to a tag so that the version you get is the version you name:
+
+```r
+install.packages("remotes")
+remotes::install_github("ruichen-bioinfo/sharedstat@v0.1.2")
 ```
 
 Requires R >= 4.0. No dependencies beyond `stats`; `data.table` is suggested but not required.
@@ -56,13 +73,12 @@ will return:
 ```r
 library(sharedstat)
 
-b1  <- rnorm(4000)
-b2  <- b1 + rnorm(4000, 0, 0.5)
-sig <- (b1 + b2) / 2
-nul <- (b2 - b1) / 2
-h   <- 1 - mean(nul^2) / mean(sig^2)
+truth <- rnorm(4000)
+b1 <- truth + rnorm(4000, sd = 0.5)   # one contrast, measured in replicate block 1
+b2 <- truth + rnorm(4000, sd = 0.5)   # and in block 2
 
-naive_gain_bias(h = h, gamma = 1.1)
+r <- reliability_from_blocks(b1, b2)  # h, snr, complete pairs; nothing is fitted
+naive_gain_bias(h = r$h, gamma = 1.1)
 ```
 
 Correct a shared-reference contrast with an instrument, with a report on instrument strength:
@@ -94,6 +110,8 @@ carry an ordering, and the `exaggeration` column gives the factor by which they 
 
 | function | purpose |
 |---|---|
+| `reliability_from_blocks()` | the reliability `h` of a reference arm, from two replicate blocks of one contrast |
+| `reliability_from_replicates()` | the same reliability from three or more replicates, pooling every pair |
 | `naive_gain_bias()` | closed-form bias of the naive gain estimator, `gamma * h` |
 | `iv_gain()` | instrumental-variable gain estimator with first-stage strength report |
 | `rms_true()` | noise-corrected amplitude from a signal and a null contrast |
@@ -105,6 +123,10 @@ carry an ordering, and the `exaggeration` column gives the factor by which they 
 | `reference_class_medians()` | class medians read against a designated reference class |
 | `simulate_closed_sum()` | known-truth simulator with compositionality from closed-sum sampling |
 | `admission_checklist()` | five-item check on a planned shared-component analysis |
+
+Thirteen exported functions. `inst/examples/reproduce_table1.R` is the shortest real use: it measures a
+reliability, reads off what a naive estimator would report at that reliability, and rebuilds the
+exaggeration factors and the share non-additivity from the bundled tables.
 
 See `help(package = "sharedstat")` for full documentation.
 
@@ -127,9 +149,27 @@ what applies to other datasets.
 
 ## Citation
 
-`CITATION.cff` carries machine-readable citation metadata. Cite the archived release for the version you
-used; the DOI will be added here once the release is deposited.
+Cite the version you used, by its own version DOI, which is on that version’s Zenodo record:
+
+> Chen R. sharedstat: diagnose and correct statistics built from a shared component. Version 0.1.2.
+> Zenodo. doi: see the Zenodo record linked from the v0.1.2 release.
+
+`CITATION.cff` carries the machine-readable entry and says 0.1.2, matching `DESCRIPTION`. It carries no `doi:` field:
+a version DOI is minted by Zenodo after the GitHub Release, so it cannot exist inside the commit the release is cut
+from. Obtain it from the version-specific Zenodo record for v0.1.2. The existing DOI 10.5281/zenodo.22693748 belongs
+to v0.1.0 and must not be used for this tree.
+
+Version matters for this package rather than being a formality: 0.1.0 exports eleven functions and 0.1.2 exports
+thirteen, and the two reliability functions exist only in 0.1.2. A reader who fetches the wrong version will not
+find the functions that produced the published reliability numbers.
 
 ## License
 
 MIT. See [LICENSE.md](LICENSE.md).
+
+## A note for anyone editing this package
+
+`NAMESPACE` is maintained **by hand**. It was not generated by roxygen2, so `roxygenise()` declines to touch it
+and reports success while writing nothing: a newly documented `@export` will get a `man/*.Rd` page and still be
+invisible to a user who installs the package. Add the `export()` line yourself. The test suite asserts that
+every public function is in the installed namespace, so a missing line fails the tests rather than shipping.
