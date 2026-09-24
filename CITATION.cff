@@ -8,8 +8,6 @@ version: 0.1.2
 type: software
 license: MIT
 repository-code: "https://github.com/ruichen-bioinfo/sharedstat"
-# No date-released. The field means the date this version was released, and 0.1.2 has not been. It briefly said
-# 2026-09-23, which was the date the file was edited, not a release date. Add it in the same change that adds the DOI.
 abstract: >-
   Quantifies and corrects bias in statistics built from a shared measured component. Covers four
   constructions: a statistic formed against a shared reference arm, a residual correlated with the
