@@ -1,10 +1,16 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite both the software and the accompanying paper."
 title: "sharedstat: Diagnose and Correct Statistics Built from a Shared Component"
-# This tree is version 0.1.2. A version DOI is minted after the GitHub Release, so it is not in this file; take it
-# from the Zenodo record for v0.1.2. The DOI 10.5281/zenodo.22693748 is v0.1.0’s, which exports eleven functions
-# and lacks the two reliability functions added here. Cite the version you used.
 version: 0.1.2
+doi: 10.5281/zenodo.22946335
+date-released: 2026-09-24
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22946335
+    description: "Version DOI for sharedstat 0.1.2"
+  - type: doi
+    value: 10.5281/zenodo.22693747
+    description: "Concept DOI, resolving to the latest version"
 type: software
 license: MIT
 repository-code: "https://github.com/ruichen-bioinfo/sharedstat"

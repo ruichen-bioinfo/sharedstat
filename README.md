@@ -4,7 +4,7 @@ Diagnose and correct statistics built from a shared component.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![R >= 4.0](https://img.shields.io/badge/R-%3E%3D%204.0-blue.svg)](https://www.r-project.org/)
-[![DOI (v0.1.0)](https://img.shields.io/badge/DOI%20v0.1.0-10.5281%2Fzenodo.22693748-blue.svg)](https://doi.org/10.5281/zenodo.22693748)
+[![DOI (v0.1.2)](https://img.shields.io/badge/DOI%20v0.1.2-10.5281%2Fzenodo.22946335-blue.svg)](https://doi.org/10.5281/zenodo.22946335)
 
 <!-- The badge is labelled with the version it resolves to, so that a reader can tell which version’s DOI it is. -->
 
@@ -13,9 +13,8 @@ This source tree is version 0.1.2. It adds the two reliability functions, `relia
 what changed. **A reliability computed with this tree cannot be reproduced with v0.1.0**, which exports eleven
 functions where this exports thirteen.
 
-The citable version DOI for a release is the one shown on that release’s Zenodo record, which the GitHub release
-links to; `CITATION.cff` in the released tree carries it. The badge above resolves to the record for the archived
-version it was minted for, so cite the version DOI rather than the badge when the distinction matters.
+The version DOI for 0.1.2 is 10.5281/zenodo.22946335; the concept DOI 10.5281/zenodo.22693747 always resolves to
+the latest version. Version 0.1.0 is 10.5281/zenodo.22693748.
 
 ## What it is
 
@@ -152,12 +151,10 @@ what applies to other datasets.
 Cite the version you used, by its own version DOI, which is on that version’s Zenodo record:
 
 > Chen R. sharedstat: diagnose and correct statistics built from a shared component. Version 0.1.2.
-> Zenodo. doi: see the Zenodo record linked from the v0.1.2 release.
+> Zenodo. doi:10.5281/zenodo.22946335.
 
-`CITATION.cff` carries the machine-readable entry and says 0.1.2, matching `DESCRIPTION`. It carries no `doi:` field:
-a version DOI is minted by Zenodo after the GitHub Release, so it cannot exist inside the commit the release is cut
-from. Obtain it from the version-specific Zenodo record for v0.1.2. The existing DOI 10.5281/zenodo.22693748 belongs
-to v0.1.0 and must not be used for this tree.
+`CITATION.cff` carries the machine-readable entry: version 0.1.2, matching `DESCRIPTION`, with the version DOI and
+the concept DOI. The DOI 10.5281/zenodo.22693748 belongs to v0.1.0 and must not be used for this tree.
 
 Version matters for this package rather than being a formality: 0.1.0 exports eleven functions and 0.1.2 exports
 thirteen, and the two reliability functions exist only in 0.1.2. A reader who fetches the wrong version will not
