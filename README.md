@@ -66,6 +66,9 @@ Requires R >= 4.0. No dependencies beyond `stats`; `data.table` is suggested but
 
 ## Usage
 
+To run the package on your own replicate blocks, start with `inst/doc/getting_started.md` and its runnable
+script, `source(system.file("examples", "getting_started.R", package = "sharedstat"))`.
+
 Measure the reliability of a reference from two replicate blocks, then read off what a naive estimator
 will return:
 
