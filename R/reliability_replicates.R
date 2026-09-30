@@ -26,7 +26,7 @@
 #'   must not be charged to the noise. `center = FALSE` gives the uncentred mean-square form. The two agree
 #'   when both contrasts have zero mean over features, and can differ materially when they do not: in one
 #'   arm of the Keyport Kik data the replicates differ in mean response by 37% of the response amplitude
-#'   and the two forms give 0.887 and 0.916.
+#'   and the two forms give 0.916 (centred) and 0.887 (uncentred).
 #'
 #' @return A list with the same fields as [reliability_from_blocks()], plus `k`, the number of replicates, and
 #'   `h_pairwise`, the reliability from each pair of replicates taken alone. Spread among `h_pairwise` shows how
@@ -70,6 +70,7 @@ reliability_from_replicates <- function(x, min_n = 3L, center = TRUE) {
   keep <- stats::complete.cases(x) & apply(is.finite(x), 1L, all)
   if (sum(keep) < min_n)
     stop(sprintf("only %d complete rows; need at least %d", sum(keep), min_n))
+  n_dropped <- sum(!keep)
   x <- x[keep, , drop = FALSE]
 
   sig <- rowMeans(x)
@@ -103,8 +104,10 @@ reliability_from_replicates <- function(x, min_n = 3L, center = TRUE) {
   if (ms_nul <= ms_sig * .Machine$double.eps * 8 || ms_nul == 0) {
     warning("every null contrast has zero variance: the replicate columns are identical, so the reliability ",
             "is not identified. Check that distinct replicates were supplied.", call. = FALSE)
-    return(list(h = NA_real_, snr = NA_real_, rms_signal = sqrt(ms_sig), rms_null = 0,
-                n_pairs = nrow(x), k = k, h_pairwise = rep(NA_real_, choose(k, 2))))
+    out <- list(h = NA_real_, snr = NA_real_, rms_signal = sqrt(ms_sig), rms_null = 0, centred = center,
+                n_pairs = nrow(x), n_dropped = n_dropped, k = k, h_pairwise = rep(NA_real_, choose(k, 2)))
+    class(out) <- c("sharedstat_reliability", "list")   # 0.1.3: same class on every path
+    return(out)
   }
   ## The pairwise values must use the same second moment as the k-replicate value, or the spread among them is not
   ## comparable with `h` and the inconsistency warning below would be computed on a different quantity.
@@ -138,7 +141,7 @@ reliability_from_replicates <- function(x, min_n = 3L, center = TRUE) {
   h_main <- max(0, 1 - ms_nul / ms_sig)
   out <- list(h = h_main, snr = sqrt(ms_sig / ms_nul),
               rms_signal = sqrt(ms_sig), rms_null = sqrt(ms_nul),
-              n_pairs = nrow(x), k = k,
+              centred = center, n_pairs = nrow(x), n_dropped = n_dropped, k = k,   # 0.1.3: fields as documented
               h_pairwise = if (is.null(hp)) h_main else pmax(0, hp))
   class(out) <- c("sharedstat_reliability", "list")
   out

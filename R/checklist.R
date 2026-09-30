@@ -35,10 +35,11 @@ admission_checklist <- function(no_effect_value = NA_real_,
          pass = !is.na(degenerate_condition) && isTRUE(simulation_confirms),
          catches = "a no-effect value derived for the wrong condition: item 1 passes and the conclusion is still wrong"),
     list(n = 3, text = "reported across the normalisation exponent with the measured one marked",
-         pass = !is.null(beta_range) && length(beta_range) == 2 && is.finite(measured_beta),
+         pass = !is.null(beta_range) && length(beta_range) == 2 && is.finite(measured_beta) &&
+                measured_beta >= min(beta_range) && measured_beta <= max(beta_range),   # 0.1.3
          catches = "amplitude-carried enrichment"),
     list(n = 4, text = "count not read as an amplitude ordering unless the noise floors are shared",
-         pass = is.na(floors_shared) || isTRUE(floors_shared),
+         pass = isTRUE(floors_shared),   # 0.1.3: NA (no count reported) no longer passes on nothing
          catches = "counts exaggerating between-condition differences"),
     list(n = 5, text = "compositional data read against a stated reference class",
          pass = !is.na(reference_class),

@@ -209,6 +209,10 @@ iv_gain <- function(e, R, S, naive = TRUE, min_abs_cor = 0.1, n_boot = 0L, seed 
     out$bias <- gn - g            # deprecated alias, to be removed
   }
   if (n_boot > 0L) {
+    ## 0.1.3: do not reset the caller's random stream. The bootstrap uses its own seeded stream and the caller's
+    ## .Random.seed is restored afterwards, so passing the data-generation seed no longer reuses that stream.
+    old_seed <- if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) get(".Random.seed", envir = globalenv()) else NULL
+    on.exit(if (is.null(old_seed)) rm(".Random.seed", envir = globalenv()) else assign(".Random.seed", old_seed, envir = globalenv()), add = TRUE)
     set.seed(seed)
     nn <- length(e)
     bs <- vapply(seq_len(n_boot), function(b) {

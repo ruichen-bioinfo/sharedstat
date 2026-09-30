@@ -1,3 +1,27 @@
+# sharedstat 0.1.3
+
+Maintenance release. Exports are unchanged (thirteen functions).
+
+## Fixed
+
+* `reliability_from_blocks()`: the null-variance test uses the relative tolerance already used by
+  `reliability_from_replicates()`. Two blocks that differ only by a constant now return `h = NA` with a warning;
+  0.1.2 returned `h = 1`.
+* `reliability_from_replicates()` returns `centred` and `n_dropped` and keeps its class on the `NA` path, as documented.
+* `iv_gain(n_boot > 0)` restores the caller's `.Random.seed`, so the bootstrap no longer consumes or resets the
+  caller's random stream.
+* `admission_checklist()`: item 3 requires the measured exponent to lie in the reported range; item 4 no longer
+  passes when no count is reported.
+* `utils` added to Imports (`utils::combn` is used).
+
+## Documentation and tests
+
+* The two reliability forms are reported as "0.916 (centred) and 0.887 (uncentred)".
+* README describes what the test suite asserts: values computable from the bundled tables and each estimator's
+  input-domain contract.
+* Tests: the pass banner is printed at the end; a comparison that could never fail is replaced by a set-equality
+  check; two tautological checks removed; regression tests added for each fix above.
+
 # sharedstat 0.1.2
 
 ## New

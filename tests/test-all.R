@@ -183,7 +183,7 @@ ok("print.sharedstat_checklist" %in% unlist(lapply(ls(asNamespace("sharedstat"),
 
 cat("\n=== k-replicate reliability tests complete ===\n")
 
-cat("\n=== ", if (FAILED) "SOME TESTS FAILED" else "ALL TESTS PASSED", " ===\n", sep = "")
+cat("\n=== ok()-style tests complete; stopifnot-style tests follow ===\n")
 if (FAILED) quit(status = 1)
 
 ## ---------------------------------------------------------------------------------------------------
@@ -196,10 +196,10 @@ if (FAILED) quit(status = 1)
 s <- c(1, 2, 3, 4, 10); n <- c(1, 2, 3, 4, NA)
 stopifnot(abs(as.numeric(rms_true(s, n)) - 0) < 1e-12)
 stopifnot(attr(rms_true(s, n), "n_dropped") == 1L)
-ok <- tryCatch({ rms_true(c(NA_real_, NA_real_), c(NA_real_, NA_real_)); FALSE }, error = function(e) TRUE)
-stopifnot(ok)                                            # all-missing used to return NaN
-ok <- tryCatch({ rms_true(1:5, 1:4); FALSE }, error = function(e) TRUE)
-stopifnot(ok)                                            # length mismatch used to be accepted silently
+refused <- tryCatch({ rms_true(c(NA_real_, NA_real_), c(NA_real_, NA_real_)); FALSE }, error = function(e) TRUE)
+stopifnot(refused)                                       # all-missing used to return NaN
+refused <- tryCatch({ rms_true(1:5, 1:4); FALSE }, error = function(e) TRUE)
+stopifnot(refused)                                            # length mismatch used to be accepted silently
 cat("PASS  rms_true pairs its inputs, and refuses unpaired or empty ones\n")
 
 ## naive_gain_bias: the closed form the paper rests on. gamma = 1 must return h, for every h.
@@ -281,10 +281,6 @@ set.seed(13)
                                           .s + rnorm(300, 0, 0.4)))$h
 stopifnot(.hr2 > 0, .hr2 <= 1)
 invisible(naive_gain_bias(h = .hr2, gamma = 1.1))
-## Flooring must not have touched any value that was already non-negative: the mammalian arms' published pairwise
-## reliabilities are all positive, and a clamp is the identity there.
-stopifnot(identical(pmax(0, c(0.585, 0.472, 0.510)), c(0.585, 0.472, 0.510)))
-stopifnot(identical(pmax(0, c(0.737, 0.392, 0.422)), c(0.737, 0.392, 0.422)))
 cat("PASS  both reliability entry points return h and h_pairwise in [0,1] and compose with naive_gain_bias\n")
 ## Outside the closed interval is still refused.
 stopifnot(refuses(naive_gain_bias(h = -1e-9, gamma = 1.1)))
@@ -404,8 +400,8 @@ stopifnot(stops(simulate_closed_sum(n_genes = 400L, class_frac = c(A = -0.1), tr
 sm <- simulate_closed_sum(n_genes = 2000L, n_dominators = 100L, n_rep = 1L, seed = 3L)
 tab <- table(sm$class)
 stopifnot(tab[["dominator"]] == 100L,
-          all(names(sm$class_sizes) == c(names(tab)[!names(tab) %in% c("reference", "dominator")],
-                                         "reference", "dominator")) || TRUE)
+          setequal(names(sm$class_sizes), names(tab)))   # 0.1.3: was an order comparison made vacuous by `|| TRUE`;
+                                                          # table() sorts names, so the property is set equality
 for (k in c("Hsf1_only", "Msn24_only", "both_required", "redundant", "TF_independent"))
   stopifnot(tab[[k]] == sm$class_sizes[[k]])
 stopifnot(sum(tab) == 2000L, all(sm$true_I[sm$class == "dominator"] == 0))
@@ -452,3 +448,26 @@ stopifnot(stops(crossblock_compensation(c(1, 2, 3), c(1, 2), c(3, 4, 5), c(3, 4,
 cat("PASS  crossblock_compensation refuses inputs on which a correlation is undefined\n")
 
 cat("\n=== input-domain tests complete ===\n")
+
+## ---- 0.1.3 regression tests ----
+## E3: two blocks that differ only by a constant have no null variance once centred; h must be NA with a warning.
+set.seed(11); b1 <- rnorm(1000); b2 <- b1 + 0.3
+w <- tryCatch(reliability_from_blocks(b1, b2), warning = function(w) w)
+stopifnot(inherits(w, "warning"))
+r <- suppressWarnings(reliability_from_blocks(b1, b2)); stopifnot(is.na(r$h))
+## M2: the replicate function returns the documented fields and class on every path.
+x <- cbind(rnorm(50), rnorm(50), rnorm(50)); x[1, 1] <- NA
+rr <- reliability_from_replicates(x)
+stopifnot(all(c("centred", "n_dropped") %in% names(rr)), rr$n_dropped == 1L, inherits(rr, "sharedstat_reliability"))
+rr0 <- suppressWarnings(reliability_from_replicates(cbind(x[-1, 1], x[-1, 1], x[-1, 1])))
+stopifnot(inherits(rr0, "sharedstat_reliability"), is.na(rr0$h))
+## M3: iv_gain with a bootstrap does not change the caller's random stream.
+set.seed(5); before <- .Random.seed
+R0 <- rnorm(300); S0 <- R0 + rnorm(300); e0 <- 0.2 * R0 + rnorm(300)
+set.seed(5); invisible(runif(900)); s1 <- .Random.seed
+set.seed(5); invisible(runif(900)); invisible(iv_gain(e0, R0, S0, n_boot = 50L, seed = 1L)); s2 <- .Random.seed
+stopifnot(identical(s1, s2))
+## M8: default arguments no longer pass items 3 and 4 on nothing; an exponent outside its range fails item 3.
+ck <- admission_checklist(); stopifnot(ck$n_pass == 0L)
+ck3 <- admission_checklist(beta_range = c(0, 1), measured_beta = 1.4); stopifnot(!isTRUE(ck3$items[[3]]$pass))
+cat("\n=== ALL TESTS PASSED (0.1.3) ===\n")

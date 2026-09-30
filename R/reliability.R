@@ -26,7 +26,7 @@
 #'   must not be charged to the noise. `center = FALSE` gives the uncentred mean-square form. The two agree
 #'   when both contrasts have zero mean over features, and can differ materially when they do not: in one
 #'   arm of the Keyport Kik data the replicates differ in mean response by 37% of the response amplitude
-#'   and the two forms give 0.887 and 0.916.
+#'   and the two forms give 0.916 (centred) and 0.887 (uncentred).
 #' @return A list with `h`, `snr`, `rms_signal`, `rms_null`, `n_pairs` and `n_dropped`. `h` is clamped at
 #'   zero and reported as such: a value of exactly zero means the paired contrast carried no more variance
 #'   than its own null, so the reliability is not distinguishable from nothing and the naive estimator is
@@ -63,14 +63,16 @@ reliability_from_blocks <- function(b1, b2, min_n = 3L, center = TRUE) {
   ## whose response is uniformly stronger than the other's shifts the intercept, not the slope, and must not be
   ## charged to the noise. `center = FALSE` gives the uncentred mean-square form. The two agree when both
   ## contrasts have zero mean over features and diverge as either mean grows: in one arm of the Keyport Kik data
-  ## the replicates differ in mean response by 37% of the response amplitude, and the forms give 0.887 and 0.916.
+  ## the replicates differ in mean response by 37% of the response amplitude, and the forms give 0.916 (centred) and 0.887 (uncentred).
   if (center) { sig <- sig - mean(sig); nul <- nul - mean(nul) }
   ms_sig <- mean(sig^2); ms_nul <- mean(nul^2)
   rms_sig <- sqrt(ms_sig); rms_nul <- sqrt(ms_nul)
   ## A null with no variance would give an infinite signal-to-noise ratio and h = 1. That is not a
   ## perfectly reliable reference; it is two blocks that are numerically identical, which in practice
   ## means the same numbers were supplied twice. Report it as undefined rather than as perfect.
-  if (ms_nul == 0) {
+  ## 0.1.3: relative tolerance, as in reliability_from_replicates(). With center = TRUE two blocks that differ only
+  ## by a constant leave a null of ~1e-33 instead of 0, and an exact test returned h = 1 with no warning.
+  if (ms_nul <= ms_sig * .Machine$double.eps * 8 || ms_nul == 0) {
     warning("the null contrast has zero variance: b1 and b2 are identical on every retained feature, ",
             "so the reliability is not identified. Check that two distinct replicate blocks were supplied.",
             call. = FALSE)

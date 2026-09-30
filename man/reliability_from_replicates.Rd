@@ -19,7 +19,7 @@ moments; a replicate that is uniformly stronger than another shifts the intercep
 must not be charged to the noise. `center = FALSE` gives the uncentred mean-square form. The two agree
 when both contrasts have zero mean over features, and can differ materially when they do not: in one
 arm of the Keyport Kik data the replicates differ in mean response by 37% of the response amplitude
-and the two forms give 0.887 and 0.916.}
+and the two forms give 0.916 (centred) and 0.887 (uncentred).}
 }
 \value{
 A list with the same fields as [reliability_from_blocks()], plus `k`, the number of replicates, and
