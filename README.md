@@ -4,7 +4,7 @@ Diagnose and correct statistics built from a shared component.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![R >= 4.0](https://img.shields.io/badge/R-%3E%3D%204.0-blue.svg)](https://www.r-project.org/)
-[![DOI (v0.1.2)](https://img.shields.io/badge/DOI%20v0.1.2-10.5281%2Fzenodo.22946335-blue.svg)](https://doi.org/10.5281/zenodo.22946335)
+[![DOI (v0.1.3)](https://img.shields.io/badge/DOI%20v0.1.3-10.5281%2Fzenodo.23070215-blue.svg)](https://doi.org/10.5281/zenodo.23070215)
 
 <!-- The badge is labelled with the version it resolves to, so that a reader can tell which version’s DOI it is. -->
 
@@ -12,7 +12,7 @@ This source tree is version 0.1.3, a maintenance release of 0.1.2; `NEWS.md` lis
 thirteen functions, including `reliability_from_blocks()` and `reliability_from_replicates()`, which version 0.1.0
 does not contain. **A reliability computed with 0.1.2 or later cannot be reproduced with v0.1.0**, which exports eleven.
 
-Each version has its own DOI on its Zenodo record. The concept DOI 10.5281/zenodo.22693747 always resolves to the
+The version DOI for 0.1.3 is 10.5281/zenodo.23070215. The concept DOI 10.5281/zenodo.22693747 always resolves to the
 latest version. Version 0.1.2 is 10.5281/zenodo.22946335; version 0.1.0 is 10.5281/zenodo.22693748.
 
 ## What it is
@@ -152,12 +152,11 @@ what applies to other datasets.
 
 Cite the version you used, by its own version DOI, which is on that version’s Zenodo record:
 
-> Chen R. sharedstat: diagnose and correct statistics built from a shared component. Version <x.y.z>.
-> Zenodo. doi:<the version DOI shown on that version’s Zenodo record>.
+> Chen R. sharedstat: diagnose and correct statistics built from a shared component. Version 0.1.3.
+> Zenodo. doi:10.5281/zenodo.23070215.
 
 The accompanying paper’s results were computed with version 0.1.2, doi:10.5281/zenodo.22946335. `CITATION.cff`
-carries the machine-readable entry for this tree, version 0.1.3, with the concept DOI; the version DOI is on the
-Zenodo record of the v0.1.3 release. The DOI 10.5281/zenodo.22693748 belongs to v0.1.0.
+carries the machine-readable entry for this tree: version 0.1.3, with its version DOI and the concept DOI. The DOI 10.5281/zenodo.22693748 belongs to v0.1.0.
 
 Version matters for this package rather than being a formality: 0.1.0 exports eleven functions and 0.1.2 and later
 export thirteen, and the two reliability functions exist only from 0.1.2. A reader who fetches the wrong version will not
