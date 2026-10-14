@@ -107,6 +107,113 @@ count_vs_amplitude(condition   = c("37_30", "37_10", "42_10", "42_30"),
 The `floors_shared` attribute is `FALSE` when the noise floors are too dissimilar for the counts to
 carry an ordering, and the `exaggeration` column gives the factor by which they would mislead.
 
+## Where sharedstat fits in an analysis
+
+sharedstat does not replace DESeq2, edgeR or limma, which estimate per-gene changes. It checks a statistic built
+across genes in which one measured response is used twice, as the reference inside a difference and as the
+regression axis, and says whether the direction of that statistic can be read.
+
+1. **Before the experiment.** With `var_ratio` (per-observation noise variance over signal variance) and `n_rep`,
+   `naive_gain_bias()` gives h = 1/(1 + var_ratio/n_rep). The reference arm clears the reversal threshold 1/γ when
+   n_rep > var_ratio/(γ − 1); for a 10% gain, n_rep > 10·var_ratio.
+2. **Responses.** Normalise counts and compute each gene's response in each replicate block (for example log-CPM
+   after TMM, treatment minus baseline). Run per-gene differential expression as usual. If a gain is computed from
+   fold changes, use unshrunken estimates: shrinkage adds a second attenuation on top of the one caused by noise.
+3. **Reliability.** `reliability_from_blocks(b1, b2)` returns h. `naive_gain_bias(h = h, gamma = ...)` compares it
+   with the threshold for the gain you care about; `direction_wrong = TRUE` means the naive direction cannot be read.
+   If both arms are measured in the same libraries, their errors may be correlated: with the null contrasts
+   n_R and n_A (block 2 minus block 1, halved) of the two arms, κ = cov(n_R, n_A)/var(R̂) can be passed as
+   `arm_error_cov_ratio` (the package does not compute κ itself).
+4. **Corrections, each with its assumption.** naive/h assumes independent arm errors and no error shared between
+   blocks. `iv_gain(e, R, S)` needs an instrument S that shares the signal but not the reference arm's error; read
+   its strength warning. With two blocks, the split-block gain (axis from block 1, difference from block 2) cannot
+   cross 1 if the blocks share no error, so its side of 1 gives the direction, and 1 + (gain − 1)/h₁ recovers the
+   size, with h₁ = cov(b1, b2)/var(b1) the reliability of block 1 (no package function yet).
+5. **Report** h with the gain, and run `admission_checklist()` for the five checks.
+
+### Worked example
+
+Simulated data with a true gain of 1.10, 5,000 genes and two blocks (`worked_example.R`, sharedstat 0.1.3):
+
+| Estimate | Value | Reading |
+|---|---|---|
+| naive gain | 0.958 | reads as a decrease, which is wrong |
+| h from two blocks | 0.865 | below 0.909, the threshold for a 10% gain; `direction_wrong = TRUE` |
+| naive/h | 1.107 | close to 1.10 |
+| split-block gain | 1.073 (expected 1.077) | above 1, so the direction is right |
+| split-block gain, size-corrected | 1.095 | close to 1.10 |
+| instrumented gain | 1.104 | close to 1.10 |
+
+## Using sharedstat on your own data
+
+The true gain is not needed. h is measured from replicates alone: agreement between blocks is signal,
+disagreement is noise. The gain enters only as the effect size you care about.
+
+**At-risk range.** Under independent errors the naive gain is γh, so any true increase between 1 and 1/h can read
+as a decrease. With h = 0.865, 1/h = 1.156: true increases up to about 16% are at risk. For an observed naive gain
+g, g/h is the gain implied under independent errors; if g < 1 but g/h > 1, the direction cannot be read. In the
+yeast hybrids of the accompanying paper the median h is 0.89, so the at-risk range is 1 to 1.12.
+
+| You have | You can |
+|---|---|
+| two or more replicate blocks | the full workflow: h, the at-risk range, the corrections, the split-block direction |
+| one replicate | use h values published for similar designs (an upper bound on h from counting noise is planned) |
+| only published summary tables | a sensitivity analysis: does the direction flip for plausible h? |
+| no data yet | plan replicates with h = 1/(1 + var_ratio/n_rep) |
+
+**Input:** each gene's response of the reference arm in each replicate block (at least two blocks); optionally the
+same for the response arm, which gives κ; optionally the effect size that matters. **Output:** h; the at-risk range
+1 to 1/h; the naive gain and naive/h; the direction flag; with two blocks, the split-block gain.
+
+**Why sequencer quality scores do not replace replicates.** Base-call quality describes read errors. The noise in
+h comes mainly from differences between replicate cultures, libraries and sampling, which only replicates measure.
+
+## What the data must look like
+
+- The same measured response must appear twice in your statistic: once inside a difference, once as the axis
+  the difference is regressed on (or compared with). If your axis comes from separate samples, you do not need
+  this package.
+- At least two replicate blocks: complete, independent runs of the experiment (separate cultures, libraries and
+  sequencing), not technical repeats of one library. Technical repeats measure only part of the noise and make h
+  look too high.
+- The same genes, normalisation and response definition in every block. Compute h on exactly the genes and the
+  scale you use for the gain.
+- Enough genes for a stable estimate: several hundred per group; with fewer, the interval on h is wide.
+
+## Where the estimates can still be wrong
+
+- Shared error between blocks. h assumes the blocks do not share error. A batch effect, a shared reference sample
+  or a common normalisation step that moves both blocks the same way inflates h, and naive/h then under-corrects.
+- Two blocks only. h from two blocks has a wide interval. Report the interval; if it includes the reversal
+  threshold for the gain you care about, treat the direction as unresolved, not as a finding.
+- Correlated errors between the two arms. If both alleles are read from the same library, their errors are
+  usually positively correlated (κ > 0). This moves the reversal threshold to (1 − κ)/γ, as `naive_gain_bias()`
+  reports when κ is given as `arm_error_cov_ratio`. Measure κ; do not assume zero.
+- Noise that differs between genes. h is one number for all genes. Low-count genes are much noisier, so h can
+  differ between expression classes; when the classes differ in expression, compute it per class by passing each
+  class's genes to `reliability_from_blocks()`.
+- Shrunken fold changes. Shrinkage estimators (for example apeglm in DESeq2) pull fold changes toward zero and add
+  their own attenuation. Use unshrunken values for the gain.
+- The instrument. The instrumented gain is unbiased only if the instrument shares no error with either arm. That
+  cannot be checked from the data. Use the strength warning, and report how large a correlation with the reference
+  error would reverse the result (the reversing correlation).
+- Which allele is the reference. The gain depends on that choice. Report both orientations when they disagree.
+
+## What it does not do
+
+- It does not estimate the true gain from a single noisy measurement. With only the variances and covariance of
+  the two arms, the gain is not identifiable; something more is needed (replicates, an instrument, or a second,
+  independent measurement).
+- It does not replace differential expression. It checks one kind of statistic built on top of it.
+
+## Planned (not in 0.1.3)
+
+- A function for the split-block gain and its size correction.
+- An upper bound on h from counting noise alone, for designs with one replicate.
+- Gene-level error weights from the count model, so that noisy genes count less.
+- Estimators that need neither an instrument nor extra replicates, for data where the signal is far from normal,
+  and bounds on the gain under the weakest assumptions. These need new theory and their own validation.
+
 ## Exported functions
 
 | function | purpose |
@@ -158,8 +265,7 @@ Cite the version you used, by its own version DOI, which is on that version’s 
 The accompanying paper’s results were computed with version 0.1.2, doi:10.5281/zenodo.22946335. `CITATION.cff`
 carries the machine-readable entry for this tree: version 0.1.3, with its version DOI and the concept DOI. The DOI 10.5281/zenodo.22693748 belongs to v0.1.0.
 
-Version matters for this package rather than being a formality: 0.1.0 exports eleven functions and 0.1.2 and later
-export thirteen, and the two reliability functions exist only from 0.1.2. A reader who fetches the wrong version will not
+The two reliability functions exist only from 0.1.2 (see the note at the top), so a reader who fetches v0.1.0 will not
 find the functions that produced the published reliability numbers.
 
 ## License

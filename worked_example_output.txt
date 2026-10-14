@@ -1,0 +1,55 @@
+List of 7
+ $ h         : num 0.865
+ $ snr       : num 2.73
+ $ rms_signal: num 1.07
+ $ rms_null  : num 0.393
+ $ centred   : logi TRUE
+ $ n_pairs   : int 5000
+ $ n_dropped : int 0
+NULL
+true gamma 1.100 | naive 0.958 | h 0.865
+$h
+[1] 0.8654112
+
+$gamma_naive
+[1] 0.9519523
+
+$gamma_naive_baseline
+[1] 0.9519523
+
+$arm_error_cov_ratio
+[1] 0
+
+$bias
+[1] -0.1480477
+
+$reversal_threshold_h
+[1] 0.9090909
+
+$direction_wrong
+[1] TRUE
+
+naive/h 1.107
+split-block gain 1.073 (expected 1+(g-1)h1 = 1.077) ; magnitude 1+(split-1)/h1 = 1.095
+$gamma
+[1] 1.104108
+
+$n
+[1] 5000
+
+$cor_RS
+[1] 0.7987962
+
+$instrument_strength
+[1] "adequate"
+
+$gamma_naive
+[1] 0.9579472
+
+$naive_minus_iv
+[1] -0.1461611
+
+$bias
+[1] -0.1461611
+
+sharedstat version 0.1.3 
